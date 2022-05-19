@@ -2,16 +2,14 @@ mod error;
 pub use error::Error;
 pub type Result<T> = core::result::Result<T, Error>;
 
-use futures::lock::Mutex;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use std::sync::Arc;
 
-static SOURCE_DATA: OnceCell<Arc<Mutex<SourceData>>> = OnceCell::new();
+static SOURCE_DATA: OnceCell<SourceData> = OnceCell::new();
 
 pub fn load_all_data<P: AsRef<Path>>(source_data_dir: Option<P>) -> Result<()> {
     match SOURCE_DATA.get() {
@@ -19,37 +17,34 @@ pub fn load_all_data<P: AsRef<Path>>(source_data_dir: Option<P>) -> Result<()> {
         None => {
             let source_data = read_source_data(source_data_dir)?;
             SOURCE_DATA
-                .set(Arc::new(Mutex::new(source_data)))
+                .set(source_data)
                 .expect("source data must be stored...");
             Ok(())
         }
     }
 }
 
-pub async fn get_bank(bank_code: &str) -> Result<Option<Bank>> {
+pub fn get_bank(bank_code: &str) -> Result<Option<Bank>> {
     let source_data = SOURCE_DATA
         .get()
         .expect("source data must be loaded in advance...");
-    let data = source_data.lock().await;
-    let bank_with_branches = data.get(bank_code);
+    let bank_with_branches = source_data.get(bank_code);
     Ok(bank_with_branches.map(|b| b.bank.clone()))
 }
 
-pub async fn get_bank_branches(bank_code: &str) -> Result<Option<BTreeMap<String, Branch>>> {
+pub fn get_bank_branches(bank_code: &str) -> Result<Option<BTreeMap<String, Branch>>> {
     let source_data = SOURCE_DATA
         .get()
         .expect("source data must be loaded in advance...");
-    let data = source_data.lock().await;
-    let bank_with_branches = data.get(bank_code);
+    let bank_with_branches = source_data.get(bank_code);
     Ok(bank_with_branches.map(|b| b.branches.clone()))
 }
 
-pub async fn get_branch(bank_code: &str, branch_code: &str) -> Result<Option<Branch>> {
+pub fn get_branch(bank_code: &str, branch_code: &str) -> Result<Option<Branch>> {
     let source_data = SOURCE_DATA
         .get()
         .expect("source data must be loaded in advance...");
-    let data = source_data.lock().await;
-    Ok(match data.get(bank_code) {
+    Ok(match source_data.get(bank_code) {
         Some(bank_with_branches) => bank_with_branches
             .branches
             .get(branch_code)
@@ -168,14 +163,14 @@ mod test {
     use super::*;
     use std::path::PathBuf;
 
-    #[tokio::test]
+    #[test]
     #[serial_test::serial]
-    async fn test_load_data() {
+    fn test_load_data() {
         let path: Option<PathBuf> = None;
         load_all_data(path).expect("data must be loaded");
         let bank_code = "0001";
         let branch_code = "988";
-        let bank = get_bank(bank_code).await.unwrap().unwrap();
+        let bank = get_bank(bank_code).unwrap().unwrap();
         assert_eq!(
             bank,
             Bank {
@@ -186,9 +181,9 @@ mod test {
                 roma: "mizuho".to_owned(),
             }
         );
-        let branches = get_bank_branches(bank_code).await.unwrap().unwrap();
+        let branches = get_bank_branches(bank_code).unwrap().unwrap();
         assert_eq!(branches.len(), 494);
-        let branch = get_branch(bank_code, branch_code).await.unwrap().unwrap();
+        let branch = get_branch(bank_code, branch_code).unwrap().unwrap();
         assert_eq!(
             branch,
             Branch {
