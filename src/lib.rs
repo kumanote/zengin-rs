@@ -24,6 +24,16 @@ pub fn load_all_data<P: AsRef<Path>>(source_data_dir: Option<P>) -> Result<()> {
     }
 }
 
+pub fn get_all_banks() -> Result<BTreeMap<String, Bank>> {
+    let source_data = SOURCE_DATA
+        .get()
+        .expect("source data must be loaded in advance...");
+    Ok(source_data
+        .into_iter()
+        .map(|(bank_code, bank_with_branches)| (bank_code.clone(), bank_with_branches.bank.clone()))
+        .collect())
+}
+
 pub fn get_bank(bank_code: &str) -> Result<Option<Bank>> {
     let source_data = SOURCE_DATA
         .get()
@@ -53,6 +63,12 @@ pub fn get_branch(bank_code: &str, branch_code: &str) -> Result<Option<Branch>> 
     })
 }
 
+pub fn get_all_banks_from_file<P: AsRef<Path>>(
+    source_data_dir: P,
+) -> Result<BTreeMap<String, Bank>> {
+    let bank_source_data = read_bank_source_data(source_data_dir)?;
+    Ok(bank_source_data)
+}
 pub fn get_bank_from_file<P: AsRef<Path>>(
     bank_code: &str,
     source_data_dir: P,
@@ -194,6 +210,9 @@ mod test {
                 roma: "kagome".to_owned(),
             }
         );
+        let all_banks = get_all_banks().unwrap();
+        let bank_from_hash_map = all_banks.get("0001").unwrap();
+        assert_eq!(bank_from_hash_map, &bank);
     }
 
     #[test]
@@ -235,5 +254,8 @@ mod test {
                 roma: "kagome".to_owned(),
             }
         );
+        let all_banks = get_all_banks_from_file(&source_data_dir).unwrap();
+        let bank_from_hash_map = all_banks.get("0001").unwrap();
+        assert_eq!(bank_from_hash_map, &bank);
     }
 }
