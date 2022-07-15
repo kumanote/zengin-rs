@@ -1,6 +1,6 @@
 [package]
 name = "zengin"
-version = "1.1.1"
+version = "1.1.2"
 authors = ["Hiroki Tanaka <support@kumano-te.com>"]
 license = "MIT"
 edition = "2021"

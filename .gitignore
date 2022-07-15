@@ -27,3 +27,6 @@ Desktop.ini
 # Rust specific ignores
 target/
 Cargo.lock
+
+# source data(https://github.com/zengin-code/source-data)
+source-data/

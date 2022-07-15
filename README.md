@@ -25,7 +25,7 @@
 
 ```toml
 [dependencies]
-zengin = { version = "1.1.0", git = "https://github.com/kumanote/zengin-rs", branch = "main" }
+zengin = { version = "1.1.2", git = "https://github.com/kumanote/zengin-rs", branch = "main" }
 ```
 
 **rust files**
